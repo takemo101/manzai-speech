@@ -67,7 +67,6 @@ def generate_audio(
         contents=content,
         config=types.GenerateContentConfig(
             response_modalities=['AUDIO'],
-            # スピーカーごとの音声設定を指定
             speech_config=speech_config,
         ),
     )
