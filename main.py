@@ -34,8 +34,8 @@ def generate_content(client: Client, prompt: str) -> str:
             以下の形式のみで出力してください。
             登場人物名: [セリフ]
             例:
-            tani: こんにちは、takedaさん。今日はどんなことをしていますか？
-            takeda: こんにちは、taniさん。今日は新しいプロジェクトのアイデアを考えていました。
+            A: こんにちは、Bさん。今日はどんなことをしていますか？
+            B: こんにちは、Aさん。今日は新しいプロジェクトのアイデアを考えていました。
             """,
             temperature=0.1,
         ),
@@ -58,7 +58,9 @@ def generate_content(client: Client, prompt: str) -> str:
     return content
 
 
-def generate_audio(client: Client, content: str) -> bytes:
+def generate_audio(
+    client: Client, content: str, speech_config: types.SpeechConfig
+) -> bytes:
     """Gemini APIを使用して、指定されたコンテンツから音声を生成します。"""
     voice_response = client.models.generate_content(
         model='gemini-2.5-flash-preview-tts',
@@ -66,28 +68,7 @@ def generate_audio(client: Client, content: str) -> bytes:
         config=types.GenerateContentConfig(
             response_modalities=['AUDIO'],
             # スピーカーごとの音声設定を指定
-            speech_config=types.SpeechConfig(
-                multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
-                    speaker_voice_configs=[
-                        types.SpeakerVoiceConfig(
-                            speaker='tani',
-                            voice_config=types.VoiceConfig(
-                                prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                                    voice_name='Leda',
-                                )
-                            ),
-                        ),
-                        types.SpeakerVoiceConfig(
-                            speaker='takeda',
-                            voice_config=types.VoiceConfig(
-                                prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                                    voice_name='Gacrux',
-                                )
-                            ),
-                        ),
-                    ]
-                )
-            ),
+            speech_config=speech_config,
         ),
     )
 
@@ -121,7 +102,33 @@ def main():
     )
 
     # 音声の生成
-    data = generate_audio(client, content_response)
+    data = generate_audio(
+        client,
+        content_response,
+        # スピーカーごとの音声設定を指定
+        types.SpeechConfig(
+            multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
+                speaker_voice_configs=[
+                    types.SpeakerVoiceConfig(
+                        speaker='tani',
+                        voice_config=types.VoiceConfig(
+                            prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                voice_name='Leda',
+                            )
+                        ),
+                    ),
+                    types.SpeakerVoiceConfig(
+                        speaker='takeda',
+                        voice_config=types.VoiceConfig(
+                            prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                voice_name='Gacrux',
+                            )
+                        ),
+                    ),
+                ]
+            )
+        ),
+    )
 
     # 生成された音声データをwaveファイルとして保存
     wave_file('output.wav', data)
