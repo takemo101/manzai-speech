@@ -1,5 +1,6 @@
 import os
 import wave
+from dataclasses import dataclass
 
 from dotenv import load_dotenv
 from google.genai import Client, types
@@ -50,8 +51,16 @@ def generate_content(client: Client, prompt: str) -> str:
     return content
 
 
+@dataclass(frozen=True)
+class SpeakerSetting:
+    """スピーカーの設定を表すデータクラス。"""
+
+    speaker: str  # スピーカーの名前
+    voice_name: str  # 使用する音声の名前 example: 'Leda', 'Gacrux'
+
+
 def generate_audio(
-    client: Client, content: str, speech_config: types.SpeechConfig
+    client: Client, content: str, speakers: list[SpeakerSetting]
 ) -> bytes:
     """Gemini APIを使用して、指定されたコンテンツから音声を生成します。"""
     voice_response = client.models.generate_content(
@@ -59,7 +68,21 @@ def generate_audio(
         contents=content,
         config=types.GenerateContentConfig(
             response_modalities=['AUDIO'],
-            speech_config=speech_config,
+            speech_config=types.SpeechConfig(
+                multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
+                    speaker_voice_configs=[
+                        types.SpeakerVoiceConfig(
+                            speaker=speaker.speaker,
+                            voice_config=types.VoiceConfig(
+                                prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                    voice_name=speaker.voice_name,
+                                )
+                            ),
+                        )
+                        for speaker in speakers
+                    ]
+                )
+            ),
         ),
     )
 
@@ -97,28 +120,10 @@ def main():
         client,
         content_response,
         # スピーカーごとの音声設定を指定
-        types.SpeechConfig(
-            multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
-                speaker_voice_configs=[
-                    types.SpeakerVoiceConfig(
-                        speaker='tani',
-                        voice_config=types.VoiceConfig(
-                            prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                                voice_name='Leda',
-                            )
-                        ),
-                    ),
-                    types.SpeakerVoiceConfig(
-                        speaker='takeda',
-                        voice_config=types.VoiceConfig(
-                            prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                                voice_name='Gacrux',
-                            )
-                        ),
-                    ),
-                ]
-            )
-        ),
+        speakers=[
+            SpeakerSetting(speaker='tani', voice_name='Leda'),
+            SpeakerSetting(speaker='takeda', voice_name='Gacrux'),
+        ],
     )
 
     # 生成された音声データをwaveファイルとして保存
