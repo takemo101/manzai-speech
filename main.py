@@ -41,17 +41,9 @@ def generate_content(client: Client, prompt: str) -> str:
         ),
     )
 
-    candidates = content_response.candidates
+    content = content_response.text
 
-    # ガード句: 応答が存在し、コンテンツが含まれているか確認
-    if (
-        candidates
-        and candidates[0].content
-        and candidates[0].content.parts
-        and candidates[0].content.parts[0].text
-    ):
-        content = candidates[0].content.parts[0].text
-    else:
+    if not content:
         raise ValueError('APIからコンテンツが受信されませんでした。')
 
     print(f'生成されたコンテンツ:\n{content}')
