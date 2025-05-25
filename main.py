@@ -111,14 +111,12 @@ def main():
     client = Client(api_key=os.getenv('GEMINI_API_KEY'))
 
     # コンテンツ生成の実行
-    content_response = generate_content(
-        client, 'taniとtakedaの漫才を生成してください'
-    )
+    content = generate_content(client, 'taniとtakedaの漫才を生成してください')
 
     # 音声の生成
     data = generate_audio(
         client,
-        content_response,
+        content,
         # スピーカーごとの音声設定を指定
         speakers=[
             SpeakerSetting(speaker='tani', voice_name='Leda'),
